@@ -16,6 +16,9 @@
 
 		.streak, .cards { display: none; }
 		#results { display: none;}
+
+		#head #badge { height: 40px; vertical-align: middle;}
+		#head h1 { margin-left: 10px; display: inline-block; vertical-align: middle;}
 	</style>
 </head>
 <body>
@@ -23,7 +26,11 @@
 <div id="loading">Laddar...</div>
 
 <div id="results">
-	<h1 id="title"></h1>
+	
+	<div id="head">
+		<img id="badge" />
+		<h1 id="title"></h1>
+	</div>
 
 	<h3>Ordinarie spelare</h3>
 	<p>(5+ battles och +50% winrate)</p>
@@ -119,6 +126,9 @@ $.ajax(settings2).done(function (clanResponse) {
 		};
 	});
 	$('#title').html(clanResponse.name);
+	$('#badge').attr('src',clanResponse.badge.image);
+
+
 	$.ajax(settings).done(function (response) {
 	  console.log(response);
 
