@@ -1,0 +1,151 @@
+<!doctype html>
+<html>
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta charset="utf-8">
+	<style type="text/css">
+
+
+		h3 { margin-bottom: 0px; }
+		p { margin-top: 5px; }
+		body { font-family: sans-serif; color: #222; }
+
+		table tr:nth-child(even) { background: #bae5ff; }
+		table td { padding: 3px; }
+		table { font-family: sans-serif; font-size: 12px}
+
+		#results { display: none;}
+	</style>
+</head>
+<body>
+
+<h1 id="title">+46 ! ROYALE</h1>
+
+<div id="loading">Laddar...</div>
+
+<div id="results">
+	<h3>Permanenta listan</h3>
+	<p>(5+ battles och +50% winrate)</p>
+	<table id="permanent">
+		<thead>
+			<tr>
+				<th>Name</th>
+				<th>Battles</th>
+				<th>Wins</th>
+				<th>%</th>
+				<th>Senaste 10</th>
+			</tr>
+		</thead>
+		<tbody></tbody>
+	</table>
+
+	<h3>Kvallistan</h3>
+	<p>(+50% winrate)</p>
+	<table id="qualifying">
+		<thead>
+			<tr>
+				<th>Name</th>
+				<th>Battles</th>
+				<th>Wins</th>
+				<th>%</th>
+				<th>Senaste 10</th>
+			</tr>
+		</thead>
+		<tbody></tbody>
+	</table>
+
+	<h3>Övriga</h3>
+	<table id="rest">
+		<thead>
+			<tr>
+				<th>Name</th>
+				<th>Battles</th>
+				<th>Wins</th>
+				<th>%</th>
+				<th>Senaste 10</th>
+			</tr>
+		</thead>
+		<tbody></tbody>
+	</table>
+</div>
+
+<script
+  src="https://code.jquery.com/jquery-2.2.4.min.js"
+  integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44="
+  crossorigin="anonymous"></script>
+<script type="text/javascript">
+
+var key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTM2MCwiaWRlbiI6IjMyNDIyMDgxNTMyNTUyODA3NSIsIm1kIjp7fSwidHMiOjE1MzMyMTIwNjY1OTF9.AGzp4kulcAKimI5BjrUdOX0a6hT2ciMaThYtx_D7WDg';
+
+var clanTag = '8UJJRYG0';
+var micke = 'YYVR8JG';
+
+var settings = {
+  "async": true,
+  "crossDomain": true,
+  "url": 'https://api.royaleapi.com/clan/' + clanTag + '/warlog',
+  "method": "GET",
+  "headers": {
+    "auth": key
+  }
+}
+
+var players = {};
+
+$.ajax(settings).done(function (response) {
+  console.log(response);
+
+  $('#loading').hide();
+
+  $.each(response, function(i, row) {
+  	$.each(row.participants, function(j, player) {
+  		if(!players[player.tag]) {
+  			players[player.tag] = { 
+  				battles: 0, 
+  				wins: 0, 
+  				name: player.name, 
+  				history: ['-', '-', '-', '-', '-', '-', '-', '-', '-', '-']
+  			};
+  		}
+
+  		players[player.tag].battles += player.battlesPlayed;
+  		players[player.tag].wins += player.wins;
+  		players[player.tag].history[i] = player.wins ? 'W' : 'L';
+  	});
+
+  });
+
+  $.each(players, function(tag, player) {
+  	player.percentage = (Math.round(player.wins / player.battles * 10000) / 100);
+  	player.tag = tag;
+  });
+
+  players = Object.values(players);
+  players = players.sort(function(a, b) {
+    return b.percentage - a.percentage;
+  });
+
+  $('#war tbody').empty();
+  $.each(players, function(i, player) {
+	var tr = $('<tr>');
+	tr.append('<td>' + player.name + '</td><td>' + player.battles + '</td><td>' + player.wins + '</td>' + 
+		'<td>' + player.percentage + '%</td><td>' + player.history.join() + '</td>');
+
+	if(player.percentage >= 50 && player.battles >= 5) {
+		$('#permanent tbody').append(tr);
+	} else if(player.percentage >= 50) {
+		$('#qualifying tbody').append(tr);
+	} else {
+		$('#rest tbody').append(tr);
+	}
+  });
+
+  $('#results').fadeIn();
+
+});
+</script>
+
+
+
+</body>
+</html>
