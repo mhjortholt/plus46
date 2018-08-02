@@ -206,7 +206,7 @@ $.ajax(settings2).done(function (clanResponse) {
 
 		if(player.percentage >= 50 && player.battles >= 5) {
 			$('#permanent tbody').append(tr);
-		} else if(player.percentage >= 50 || player.battles === 1 || player.best_streak >= 50) {
+		} else if(player.percentage >= 50 || player.battles < 2 || player.best_streak >= 50) {
 			$('#qualifying tbody').append(tr);
 		} else {
 			$('#rest tbody').append(tr);
