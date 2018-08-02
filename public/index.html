@@ -14,17 +14,17 @@
 		table td { padding: 3px; }
 		table { font-family: sans-serif; font-size: 12px}
 
-		.streak { display: none; }
+		.streak, .cards { display: none; }
 		#results { display: none;}
 	</style>
 </head>
 <body>
 
-<h1 id="title">+46 ! ROYALE</h1>
-
 <div id="loading">Laddar...</div>
 
 <div id="results">
+	<h1 id="title"></h1>
+
 	<h3>Ordinarie spelare</h3>
 	<p>(5+ battles och +50% winrate)</p>
 	<table id="permanent">
@@ -36,6 +36,7 @@
 				<th>%</th>
 				<th>Senaste 10</th>
 				<th class="streak">Streak</th>
+				<th class="cards">Cards earned</th>
 			</tr>
 		</thead>
 		<tbody></tbody>
@@ -52,6 +53,7 @@
 				<th>%</th>
 				<th>Senaste 10</th>
 				<th class="streak">Streak</th>
+				<th class="cards">Cards earned</th>
 			</tr>
 		</thead>
 		<tbody></tbody>
@@ -67,6 +69,7 @@
 				<th>%</th>
 				<th>Senaste 10</th>
 				<th class="streak">Streak</th>
+				<th class="cards">Cards earned</th>
 			</tr>
 		</thead>
 		<tbody></tbody>
@@ -93,95 +96,116 @@ var settings = {
     "auth": key
   }
 }
+var settings2 = {
+  "async": true,
+  "crossDomain": true,
+  "url": 'https://api.royaleapi.com/clan/' + clanTag,
+  "method": "GET",
+  "headers": {
+    "auth": key
+  }
+}
 
 var players = {};
+$.ajax(settings2).done(function (clanResponse) {
+	console.log(clanResponse);
+	$.each(clanResponse.members, function(i, member) {
+		players[member.tag] = { 
+			battles: 0, 
+			wins: 0, 
+			name: member.name, 
+			history: ['-', '-', '-', '-', '-', '-', '-', '-', '-', '-'],
+			cards: 0
+		};
+	});
+	$('#title').html(clanResponse.name);
+	$.ajax(settings).done(function (response) {
+	  console.log(response);
 
-$.ajax(settings).done(function (response) {
-  console.log(response);
+	  $('#loading').hide();
 
-  $('#loading').hide();
+	  $.each(response, function(i, row) {
+	  	$.each(row.participants, function(j, player) {
+	  		if(players[player.tag]) {
+		  		players[player.tag].battles += player.battlesPlayed;
+		  		players[player.tag].wins += player.wins;
+		  		players[player.tag].cards += player.cardsEarned;
+				players[player.tag].history[i] = player.wins ? 'W' : 'L';
 
-  $.each(response, function(i, row) {
-  	$.each(row.participants, function(j, player) {
-  		if(!players[player.tag]) {
-  			players[player.tag] = { 
-  				battles: 0, 
-  				wins: 0, 
-  				name: player.name, 
-  				history: ['-', '-', '-', '-', '-', '-', '-', '-', '-', '-']
-  			};
-  		}
+		  		if(player.battlesPlayed === 2) {
+		  			if(player.wins === 2) players[player.tag].history[i] = 'WW';
+		  			if(player.wins === 1) players[player.tag].history[i] = 'WL';
+		  			if(player.wins === 0) players[player.tag].history[i] = 'LL';
+		  		}
+		  	}
+	  	});
 
-  		players[player.tag].battles += player.battlesPlayed;
-  		players[player.tag].wins += player.wins;
-		players[player.tag].history[i] = player.wins ? 'W' : 'L';
+	  });
 
-  		if(player.battlesPlayed === 2) {
-  			if(player.wins === 2) players[player.tag].history[i] = 'WW';
-  			if(player.wins === 1) players[player.tag].history[i] = 'WL';
-  			if(player.wins === 0) players[player.tag].history[i] = 'LL';
-  		}
-  	});
+	  function getBestStreak(player) {
+	  	var best = 0;
+	  	for(var i = 0; i < player.history.join().length; i++) {
+	  		var res = getStreak(player.history.join(), i);
+	  		if(res > best) {
+	  			best = res;
+	  		}
+	  	}
+	  	return best;
+	  }
 
-  });
+	  function getStreak(history, j) {
+	  	var wins = 0, battles = 0;
+	  	for (var i = 0; i < history.length; i++) {
+	  		var result = history.charAt(i);
+	  		if(result === 'W') {
+	  			wins++;
+	  			battles++;
+	  		} else if (result === 'L') {
+	  			battles++;
+	  		}
+	  		if(i === j) {
+	  			break;
+	  		}
+	  	}
+	  	return (Math.round(wins / battles * 10000) / 100);
+	  }
 
-  function getBestStreak(player) {
-  	var best = 0;
-  	for(var i = 0; i < player.history.join().length; i++) {
-  		var res = getStreak(player.history.join(), i);
-  		if(res > best) {
-  			best = res;
-  		}
-  	}
-  	return best;
-  }
+	  $.each(players, function(tag, player) {
+	  	if(player.battles > 0) {
+	  		player.percentage = (Math.round(player.wins / player.battles * 10000) / 100);
+	  	} else {
+	  		player.percentage = -1;
+	  	}
+	  	player.tag = tag;
+	  	player.best_streak = getBestStreak(player);
+	  });
 
-  function getStreak(history, j) {
-  	var wins = 0, battles = 0;
-  	for (var i = 0; i < history.length; i++) {
-  		var result = history.charAt(i);
-  		if(result === 'W') {
-  			wins++;
-  			battles++;
-  		} else if (result === 'L') {
-  			battles++;
-  		}
-  		if(i === j) {
-  			break;
-  		}
-  	}
-  	return (Math.round(wins / battles * 10000) / 100);
-  }
+	  players = Object.values(players);
+	  players = players.sort(function(a, b) {
+	    return b.percentage - a.percentage;
+	  });
 
-  $.each(players, function(tag, player) {
-  	player.percentage = (Math.round(player.wins / player.battles * 10000) / 100);
-  	player.tag = tag;
-  	player.best_streak = getBestStreak(player);
-  });
+	  $('#war tbody').empty();
+	  $.each(players, function(i, player) {
+		var tr = $('<tr>');
+		tr.append('<td>' + player.name + '</td><td>' + player.battles + '</td><td>' + player.wins + '</td>' + 
+			'<td>' + (player.percentage >= 0 ? player.percentage +'%' : '-' ) + '</td>' +
+			'<td>' + player.history.join() + '</td>' +
+			'<td class="streak">' + player.best_streak + '</td>' +
+			'<td class="streak">' + player.cards + '</td>');
 
-  players = Object.values(players);
-  players = players.sort(function(a, b) {
-    return b.percentage - a.percentage;
-  });
+		if(player.percentage >= 50 && player.battles >= 5) {
+			$('#permanent tbody').append(tr);
+		} else if(player.percentage >= 50 || player.battles === 1 || player.best_streak >= 50) {
+			$('#qualifying tbody').append(tr);
+		} else {
+			$('#rest tbody').append(tr);
+		}
+	  });
 
-  $('#war tbody').empty();
-  $.each(players, function(i, player) {
-	var tr = $('<tr>');
-	tr.append('<td>' + player.name + '</td><td>' + player.battles + '</td><td>' + player.wins + '</td>' + 
-		'<td>' + player.percentage + '%</td><td>' + player.history.join() + '</td>' +
-	'<td class="streak">' + player.best_streak + '</td>');
+	  $('#results').fadeIn();
 
-	if(player.percentage >= 50 && player.battles >= 5) {
-		$('#permanent tbody').append(tr);
-	} else if(player.percentage >= 50 || player.battles === 1 || player.best_streak >= 50) {
-		$('#qualifying tbody').append(tr);
-	} else {
-		$('#rest tbody').append(tr);
-	}
-  });
-
-  $('#results').fadeIn();
-
+	});
 });
 </script>
 
