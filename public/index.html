@@ -14,6 +14,7 @@
 		table td { padding: 3px; }
 		table { font-family: sans-serif; font-size: 12px}
 
+		.streak { display: none; }
 		#results { display: none;}
 	</style>
 </head>
@@ -34,6 +35,7 @@
 				<th>Wins</th>
 				<th>%</th>
 				<th>Senaste 10</th>
+				<th class="streak">Streak</th>
 			</tr>
 		</thead>
 		<tbody></tbody>
@@ -49,6 +51,7 @@
 				<th>Wins</th>
 				<th>%</th>
 				<th>Senaste 10</th>
+				<th class="streak">Streak</th>
 			</tr>
 		</thead>
 		<tbody></tbody>
@@ -63,6 +66,7 @@
 				<th>Wins</th>
 				<th>%</th>
 				<th>Senaste 10</th>
+				<th class="streak">Streak</th>
 			</tr>
 		</thead>
 		<tbody></tbody>
@@ -110,15 +114,21 @@ $.ajax(settings).done(function (response) {
 
   		players[player.tag].battles += player.battlesPlayed;
   		players[player.tag].wins += player.wins;
-  		players[player.tag].history[i] = player.wins ? 'W' : 'L';
+		players[player.tag].history[i] = player.wins ? 'W' : 'L';
+
+  		if(player.battlesPlayed === 2) {
+  			if(player.wins === 2) players[player.tag].history[i] = 'WW';
+  			if(player.wins === 1) players[player.tag].history[i] = 'WL';
+  			if(player.wins === 0) players[player.tag].history[i] = 'LL';
+  		}
   	});
 
   });
 
   function getBestStreak(player) {
   	var best = 0;
-  	for(var i = 0; i < player.history.length; i++) {
-  		var res = getStreak(player.history, i);
+  	for(var i = 0; i < player.history.join().length; i++) {
+  		var res = getStreak(player.history.join(), i);
   		if(res > best) {
   			best = res;
   		}
@@ -128,17 +138,18 @@ $.ajax(settings).done(function (response) {
 
   function getStreak(history, j) {
   	var wins = 0, battles = 0;
-  	$.each(history, function(i, result) {
+  	for (var i = 0; i < history.length; i++) {
+  		var result = history.charAt(i);
   		if(result === 'W') {
   			wins++;
-  			battles++
+  			battles++;
   		} else if (result === 'L') {
-  			battles++
+  			battles++;
   		}
   		if(i === j) {
-  			return false;
+  			break;
   		}
-  	});
+  	}
   	return (Math.round(wins / battles * 10000) / 100);
   }
 
@@ -157,8 +168,8 @@ $.ajax(settings).done(function (response) {
   $.each(players, function(i, player) {
 	var tr = $('<tr>');
 	tr.append('<td>' + player.name + '</td><td>' + player.battles + '</td><td>' + player.wins + '</td>' + 
-		'<td>' + player.percentage + '%</td><td>' + player.history.join() + '</td>');
-	//<td>' + player.best_streak + '</td>');
+		'<td>' + player.percentage + '%</td><td>' + player.history.join() + '</td>' +
+	'<td class="streak">' + player.best_streak + '</td>');
 
 	if(player.percentage >= 50 && player.battles >= 5) {
 		$('#permanent tbody').append(tr);
