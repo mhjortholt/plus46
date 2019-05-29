@@ -12,6 +12,7 @@ express()
 
 
 // Keep server awake
+/*
 setInterval(function() {
 	https.get('https://plus46.herokuapp.com', (resp) => {
 	  console.log('Ping!');
@@ -19,3 +20,4 @@ setInterval(function() {
 	  console.log("Error when pinging: " + err.message);
 	});
 }, 13*60*1000);
+*/
